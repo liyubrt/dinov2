@@ -50,7 +50,7 @@ def get_args_parser(
     )
     parser.add_argument(
         "--timeout",
-        default=2800,
+        default=60*24*30,
         type=int,
         help="Duration of the job",
     )

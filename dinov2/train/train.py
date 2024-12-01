@@ -22,6 +22,8 @@ from dinov2.utils.utils import CosineScheduler
 
 from dinov2.train.ssl_meta_arch import SSLMetaArch
 
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
 
 torch.backends.cuda.matmul.allow_tf32 = True  # PyTorch 1.12 sets this to False by default
 logger = logging.getLogger("dinov2")
@@ -40,9 +42,9 @@ def get_args_parser(add_help: bool = True):
     parser.add_argument(
         "opts",
         help="""
-Modify config options at the end of the command. For Yacs configs, use
-space-separated "PATH.KEY VALUE" pairs.
-For python-based LazyConfig, use "path.key=value".
+        Modify config options at the end of the command. For Yacs configs, use
+        space-separated "PATH.KEY VALUE" pairs.
+        For python-based LazyConfig, use "path.key=value".
         """.strip(),
         default=None,
         nargs=argparse.REMAINDER,
@@ -136,32 +138,6 @@ def do_train(cfg, model, resume=False):
     inputs_dtype = torch.half
     fp16_scaler = model.fp16_scaler  # for mixed precision training
 
-    # setup optimizer
-
-    optimizer = build_optimizer(cfg, model.get_params_groups())
-    (
-        lr_schedule,
-        wd_schedule,
-        momentum_schedule,
-        teacher_temp_schedule,
-        last_layer_lr_schedule,
-    ) = build_schedulers(cfg)
-
-    # checkpointer
-    checkpointer = FSDPCheckpointer(model, cfg.train.output_dir, optimizer=optimizer, save_to_disk=True)
-
-    start_iter = checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("iteration", -1) + 1
-
-    OFFICIAL_EPOCH_LENGTH = cfg.train.OFFICIAL_EPOCH_LENGTH
-    max_iter = cfg.optim.epochs * OFFICIAL_EPOCH_LENGTH
-
-    periodic_checkpointer = PeriodicCheckpointer(
-        checkpointer,
-        period=3 * OFFICIAL_EPOCH_LENGTH,
-        max_iter=max_iter,
-        max_to_keep=3,
-    )
-
     # setup data preprocessing
 
     img_size = cfg.crops.global_crops_size
@@ -189,13 +165,41 @@ def do_train(cfg, model, resume=False):
         dtype=inputs_dtype,
     )
 
-    # setup data loader
-
     dataset = make_dataset(
         dataset_str=cfg.train.dataset_path,
         transform=data_transform,
         target_transform=lambda _: (),
     )
+
+    # setup optimizer
+
+    optimizer = build_optimizer(cfg, model.get_params_groups())
+    (
+        lr_schedule,
+        wd_schedule,
+        momentum_schedule,
+        teacher_temp_schedule,
+        last_layer_lr_schedule,
+    ) = build_schedulers(cfg)
+
+    # checkpointer
+    checkpointer = FSDPCheckpointer(model, cfg.train.output_dir, optimizer=optimizer, save_to_disk=True)
+
+    start_iter = checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("iteration", -1) + 1
+
+    OFFICIAL_EPOCH_LENGTH = cfg.train.OFFICIAL_EPOCH_LENGTH
+    # max_iter = cfg.optim.epochs * OFFICIAL_EPOCH_LENGTH
+    max_iter = cfg.optim.epochs * len(dataset) // cfg.train.batch_size_per_gpu
+
+    periodic_checkpointer = PeriodicCheckpointer(
+        checkpointer,
+        period=12 * OFFICIAL_EPOCH_LENGTH,
+        max_iter=max_iter,
+        max_to_keep=3,
+    )
+
+    # setup data loader
+
     # sampler_type = SamplerType.INFINITE
     sampler_type = SamplerType.SHARDED_INFINITE
     data_loader = make_data_loader(
@@ -218,10 +222,11 @@ def do_train(cfg, model, resume=False):
     metrics_file = os.path.join(cfg.train.output_dir, "training_metrics.json")
     metric_logger = MetricLogger(delimiter="  ", output_file=metrics_file)
     header = "Training"
+    log_freq = 100
 
     for data in metric_logger.log_every(
         data_loader,
-        10,
+        log_freq,
         header,
         max_iter,
         start_iter,

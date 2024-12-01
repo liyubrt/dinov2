@@ -4,14 +4,16 @@ import os
 from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
-from PIL import Image
+from PIL import Image, TiffImagePlugin
 from torchvision.datasets import DatasetFolder
 
 from .extended import ExtendedVisionDataset
 
 
 logger = logging.getLogger("dinov2")
-
+# logging.getLogger("PIL.PngImagePlugin").setLevel(logging.CRITICAL + 1)
+logging.getLogger("PIL.TiffImagePlugin").setLevel(51)
+TiffImagePlugin.DEBUG = False
 
 def pil_loader(p):
     return Image.open(p).convert("RGB")

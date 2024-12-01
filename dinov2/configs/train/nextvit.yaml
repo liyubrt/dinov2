@@ -1,0 +1,27 @@
+# this corresponds to the default config
+train:
+  dataset_path: ImageNet:split=TRAIN
+  batch_size_per_gpu: 64
+  num_workers: 7
+evaluation:
+  eval_period_iterations: 12500000
+compute_precision:
+  teacher:
+    backbone:
+      sharding_strategy: NO_SHARD  # SHARD_GRAD_OP
+    dino_head:
+      sharding_strategy: NO_SHARD
+    ibot_head:
+      sharding_strategy: NO_SHARD
+  student:
+    backbone:
+      sharding_strategy: NO_SHARD
+    dino_head:
+      sharding_strategy: NO_SHARD
+    ibot_head:
+      sharding_strategy: NO_SHARD
+student:
+  arch: nextvit  # vit_large, nextvit
+  block_chunks: 4
+optim:
+  base_lr: 0.0001
