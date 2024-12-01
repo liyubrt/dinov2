@@ -221,10 +221,11 @@ def do_train(cfg, model, resume=False):
     metrics_file = os.path.join(cfg.train.output_dir, "training_metrics.json")
     metric_logger = MetricLogger(delimiter="  ", output_file=metrics_file)
     header = "Training"
+    log_freq = 10
 
     for data in metric_logger.log_every(
         data_loader,
-        10,
+        log_freq,
         header,
         max_iter,
         start_iter,
