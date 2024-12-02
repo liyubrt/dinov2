@@ -4,7 +4,7 @@ train:
   batch_size_per_gpu: 64
   num_workers: 7
 evaluation:
-  eval_period_iterations: 12500000
+  eval_period_iterations: 12500000  # disabled because it's not supported as of now
 compute_precision:
   teacher:
     backbone:
@@ -24,4 +24,4 @@ student:
   arch: nextvit  # vit_large, nextvit
   block_chunks: 4
 optim:
-  base_lr: 0.0001
+  base_lr: 0.0002

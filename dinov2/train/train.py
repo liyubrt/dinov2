@@ -171,6 +171,13 @@ def do_train(cfg, model, resume=False):
         target_transform=lambda _: (),
     )
 
+    # get actual iterations per epoch
+
+    actual_epoch_length = len(dataset) // cfg.train.batch_size_per_gpu
+    cfg.train.OFFICIAL_EPOCH_LENGTH = actual_epoch_length
+    OFFICIAL_EPOCH_LENGTH = cfg.train.OFFICIAL_EPOCH_LENGTH
+    max_iter = cfg.optim.epochs * OFFICIAL_EPOCH_LENGTH
+
     # setup optimizer
 
     optimizer = build_optimizer(cfg, model.get_params_groups())
@@ -183,17 +190,14 @@ def do_train(cfg, model, resume=False):
     ) = build_schedulers(cfg)
 
     # checkpointer
+
     checkpointer = FSDPCheckpointer(model, cfg.train.output_dir, optimizer=optimizer, save_to_disk=True)
 
     start_iter = checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("iteration", -1) + 1
 
-    OFFICIAL_EPOCH_LENGTH = cfg.train.OFFICIAL_EPOCH_LENGTH
-    # max_iter = cfg.optim.epochs * OFFICIAL_EPOCH_LENGTH
-    max_iter = cfg.optim.epochs * len(dataset) // cfg.train.batch_size_per_gpu
-
     periodic_checkpointer = PeriodicCheckpointer(
         checkpointer,
-        period=12 * OFFICIAL_EPOCH_LENGTH,
+        period=OFFICIAL_EPOCH_LENGTH,
         max_iter=max_iter,
         max_to_keep=3,
     )

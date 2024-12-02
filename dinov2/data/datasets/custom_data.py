@@ -4,6 +4,7 @@ import os
 from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 from PIL import Image, TiffImagePlugin
 from torchvision.datasets import DatasetFolder
 
