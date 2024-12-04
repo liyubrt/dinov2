@@ -1,12 +1,12 @@
 # this corresponds to the default config
 train:
   dataset_path: ImageNet:split=TRAIN
-  batch_size_per_gpu: 128
+  batch_size_per_gpu: 16
   OFFICIAL_EPOCH_LENGTH: 1250
 compute_precision:
   teacher:
     backbone:
-      sharding_strategy: NO_SHARD  # SHARD_GRAD_OP
+      sharding_strategy: NO_SHARD  # NO_SHARD or SHARD_GRAD_OP
     dino_head:
       sharding_strategy: NO_SHARD
     ibot_head:
