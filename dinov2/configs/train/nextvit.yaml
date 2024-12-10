@@ -1,14 +1,15 @@
 # this corresponds to the default config
 train:
   dataset_path: ImageNet:split=TRAIN
-  batch_size_per_gpu: 64
+  batch_size_per_gpu: 128
+  OFFICIAL_EPOCH_LENGTH: 1250
   num_workers: 7
 evaluation:
-  eval_period_iterations: 12500000  # disabled because it's not supported as of now
+  eval_period_iterations: 100000  # save additional teacher checkpoint
 compute_precision:
   teacher:
     backbone:
-      sharding_strategy: NO_SHARD  # SHARD_GRAD_OP
+      sharding_strategy: NO_SHARD  # NO_SHARD or SHARD_GRAD_OP or FULL_SHARD
     dino_head:
       sharding_strategy: NO_SHARD
     ibot_head:
@@ -20,8 +21,12 @@ compute_precision:
       sharding_strategy: NO_SHARD
     ibot_head:
       sharding_strategy: NO_SHARD
+teacher:
+  warmup_teacher_temp_epochs: 150
 student:
   arch: nextvit  # vit_large, nextvit
   block_chunks: 4
 optim:
-  base_lr: 0.0002
+  base_lr: 0.0001
+  epochs: 500
+  warmup_epochs: 50

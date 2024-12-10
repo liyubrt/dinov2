@@ -173,8 +173,8 @@ def do_train(cfg, model, resume=False):
 
     # get actual iterations per epoch
 
-    actual_epoch_length = len(dataset) // cfg.train.batch_size_per_gpu
-    cfg.train.OFFICIAL_EPOCH_LENGTH = actual_epoch_length
+    # actual_epoch_length = len(dataset) // cfg.train.batch_size_per_gpu
+    # cfg.train.OFFICIAL_EPOCH_LENGTH = actual_epoch_length
     OFFICIAL_EPOCH_LENGTH = cfg.train.OFFICIAL_EPOCH_LENGTH
     max_iter = cfg.optim.epochs * OFFICIAL_EPOCH_LENGTH
 
@@ -199,7 +199,7 @@ def do_train(cfg, model, resume=False):
         checkpointer,
         period=OFFICIAL_EPOCH_LENGTH,
         max_iter=max_iter,
-        max_to_keep=3,
+        max_to_keep=1,
     )
 
     # setup data loader

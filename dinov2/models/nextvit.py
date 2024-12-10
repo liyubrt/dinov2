@@ -25,6 +25,7 @@ class NextVitSmall(torch.nn.Module):
         self.embed_dim = 1024
         self.blocks = [0] * 6
         self.proj_head = torch.nn.Linear(1024, num_classes)
+        self.norm = torch.nn.LayerNorm(normalized_shape=1024, eps=1e-6)
 
     def forward_backbone(self, x, masks=None):
         y = self.backbone(x)  # use y[-1]
@@ -34,6 +35,7 @@ class NextVitSmall(torch.nn.Module):
 
         n = y.shape[0]
         y_reshaped = y.reshape(n, 197, 1024)
+        y_reshaped = self.norm(y_reshaped)
         return {
             "x_norm_clstoken": y_reshaped[:, 0],  # teacher 128x1024
             "x_norm_regtokens": y_reshaped[:, 1 : self.num_register_tokens + 1],  # teacher 128x0x1024
